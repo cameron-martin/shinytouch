@@ -1,8 +1,8 @@
-def __init__():
-	pass
+from opencv.highgui import *
+from opencv.cv import *
+
 
 def filter_motion(frame, lastframe):
-	global motion_threshold
 
 	diff=cvCreateImage(cvSize(frame.width, frame.height), frame.depth, 1)
 	

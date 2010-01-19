@@ -1,3 +1,4 @@
+import os
 # size of the screen and capture
 width = 640
 height = 480
