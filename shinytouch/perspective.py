@@ -2,7 +2,7 @@
     import config
     from opencv.cv import *
     mmat = False
-    self.update_matrix()
+    update_matrix()
 
     def warp(frame):
         global mmat
