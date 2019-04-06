@@ -1,1 +1,3 @@
-config_warp.py
+/node_modules
+/.cache
+/dist
