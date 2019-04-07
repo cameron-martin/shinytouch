@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { jsx, Interpolation, css } from "@emotion/core";
-import PerspectiveTransform, { CoordPair } from "./perspective-transform";
 import ContainTransform from "./ContainTransform";
 import cv from "./opencv";
 
 interface Coord {
   x: number;
   y: number;
+}
+
+interface CoordPair {
+  from: Coord;
+  to: Coord;
 }
 
 const layer: Interpolation = {
