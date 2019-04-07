@@ -1,20 +1,20 @@
 import { useState } from "react";
 import Intro from "./Intro";
 import { jsx } from "@emotion/core";
-import SetupInstructions from "./SetupInstructions";
-import CalibrateScreen from "./CalibrateScreen";
+import Setup from "./Setup";
+import { hot } from "react-hot-loader";
 
-type Mode = "intro" | "setup-instructions" | "calibrate-screen";
+type Mode = "intro" | "setup";
 
-export default function App() {
+function App() {
   const [mode, setMode] = useState<Mode>("intro");
 
   switch (mode) {
     case "intro":
-      return <Intro start={() => setMode("setup-instructions")} />;
-    case "setup-instructions":
-      return <SetupInstructions continue={() => setMode("calibrate-screen")} />;
-    case "calibrate-screen":
-      return <CalibrateScreen />;
+      return <Intro start={() => setMode("setup")} />;
+    case "setup":
+      return <Setup />;
   }
 }
+
+export default hot(module)(App);
