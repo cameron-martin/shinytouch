@@ -1,6 +1,7 @@
 {
   "scripts": {
     "test": "jest",
+    "build": "parcel build src/index.html",
     "start": "parcel src/index.html"
   },
   "dependencies": {
