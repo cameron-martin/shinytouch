@@ -42,7 +42,7 @@ export default function Setup() {
   useEffect(() => {
     (async () => {
       const media = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1920, height: 1080 },
+        video: { width: 1920, height: 1080, frameRate: 60 },
       });
 
       const videoSettings = media.getVideoTracks()[0].getSettings();
