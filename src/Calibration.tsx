@@ -23,7 +23,11 @@ const layer: Interpolation = {
 
 type Mode = { step: 1 } | { step: 2 };
 
-export default function Setup() {
+interface Props {
+  mediaStream: MediaStream;
+}
+
+export default function Calibration(props: Props) {
   const [crossPosition, setCrossPosition] = useState<Coord | null>(null);
   const [mode, setMode] = useState<Mode>({ step: 1 });
   const [videoSize, setVideoSize] = useState<Coord>({ x: 0, y: 0 });
@@ -40,17 +44,11 @@ export default function Setup() {
   const calibrationExamples = useRef<CoordPair[]>([]);
 
   useEffect(() => {
-    (async () => {
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1920, height: 1080, frameRate: 60 },
-      });
+    const videoSettings = props.mediaStream.getVideoTracks()[0].getSettings();
 
-      const videoSettings = media.getVideoTracks()[0].getSettings();
+    setVideoSize({ x: videoSettings.width!, y: videoSettings.height! });
 
-      setVideoSize({ x: videoSettings.width!, y: videoSettings.height! });
-
-      videoRef.current!.srcObject = media;
-    })();
+    videoRef.current!.srcObject = props.mediaStream;
   }, []);
 
   const handleVideoClick = (event: React.MouseEvent<HTMLVideoElement>) => {
