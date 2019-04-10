@@ -2,17 +2,12 @@ import { useState } from "react";
 import Intro from "./Intro";
 import { jsx } from "@emotion/core";
 import { hot } from "react-hot-loader";
-import SetupInstructions from "./SetupInstructions";
-import Calibration from "./Calibration";
+import Setup from "./Setup";
 
 type Step =
   | { type: "intro" }
   | {
-      type: "setup-instructions";
-      mediaStream: MediaStream;
-    }
-  | {
-      type: "calibration";
+      type: "setup";
       mediaStream: MediaStream;
     };
 
@@ -24,25 +19,14 @@ function App() {
       video: { width: 1920, height: 1080, frameRate: 60 },
     });
 
-    setStep({ type: "setup-instructions", mediaStream });
+    setStep({ type: "setup", mediaStream });
   };
 
   switch (step.type) {
     case "intro":
       return <Intro start={start} />;
-    case "setup-instructions":
-      return (
-        <SetupInstructions
-          continue={() =>
-            setStep({
-              type: "calibration",
-              mediaStream: step.mediaStream,
-            })
-          }
-        />
-      );
-    case "calibration":
-      return <Calibration mediaStream={step.mediaStream} />;
+    case "setup":
+      return <Setup mediaStream={step.mediaStream} />;
   }
 }
 

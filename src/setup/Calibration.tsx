@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { jsx, Interpolation, css } from "@emotion/core";
-import ContainTransform from "./ContainTransform";
-import cv from "./opencv";
+import { jsx, css } from "@emotion/core";
+import ContainTransform from "../ContainTransform";
+import cv from "../opencv";
+import { highConstrast, layer } from "../mixins";
+import React from "react";
 
 interface Coord {
   x: number;
@@ -13,24 +15,16 @@ interface CoordPair {
   to: Coord;
 }
 
-const layer: Interpolation = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  width: "100%",
-  height: "100%",
-};
-
 type Mode = { step: 1 } | { step: 2 };
 
 interface Props {
   mediaStream: MediaStream;
+  video: React.RefObject<HTMLVideoElement>;
 }
 
 export default function Calibration(props: Props) {
   const [crossPosition, setCrossPosition] = useState<Coord | null>(null);
   const [mode, setMode] = useState<Mode>({ step: 1 });
-  const [videoSize, setVideoSize] = useState<Coord>({ x: 0, y: 0 });
 
   const setRandomCrossPosition = () =>
     setCrossPosition({ x: Math.random(), y: Math.random() });
@@ -39,20 +33,10 @@ export default function Calibration(props: Props) {
     setRandomCrossPosition();
   }, []);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-
   const calibrationExamples = useRef<CoordPair[]>([]);
 
-  useEffect(() => {
-    const videoSettings = props.mediaStream.getVideoTracks()[0].getSettings();
-
-    setVideoSize({ x: videoSettings.width!, y: videoSettings.height! });
-
-    videoRef.current!.srcObject = props.mediaStream;
-  }, []);
-
-  const handleVideoClick = (event: React.MouseEvent<HTMLVideoElement>) => {
-    const video = event.currentTarget;
+  const handleVideoClick = (event: React.MouseEvent<HTMLElement>) => {
+    const video = props.video.current!;
 
     const videoCoord = new ContainTransform(
       { width: video.videoWidth, height: video.videoHeight },
@@ -83,7 +67,7 @@ export default function Calibration(props: Props) {
       return;
     }
 
-    const video = videoRef.current!;
+    const video = props.video.current!;
 
     let srcTri = cv.matFromArray(
       4,
@@ -132,20 +116,8 @@ export default function Calibration(props: Props) {
   }, [mode]);
 
   return (
-    <main
-      css={{
-        height: "100vh",
-        position: "relative",
-      }}
-    >
-      <video
-        css={layer}
-        autoPlay
-        ref={videoRef}
-        onClick={handleVideoClick}
-        width={videoSize.x}
-        height={videoSize.y}
-      />
+    <React.Fragment>
+      <div css={layer} onClick={handleVideoClick} />
 
       {mode.step === 2 && (
         <canvas
@@ -161,13 +133,7 @@ export default function Calibration(props: Props) {
           pointerEvents: "none",
         })}
       >
-        <p
-          css={{
-            color: "white",
-            textAlign: "center",
-            textShadow: "0px 0px 5px black",
-          }}
-        >
+        <p css={css(highConstrast, { textAlign: "center" })}>
           Touch the X and click where your finger is pointing in the video
         </p>
 
@@ -186,6 +152,6 @@ export default function Calibration(props: Props) {
           />
         )}
       </div>
-    </main>
+    </React.Fragment>
   );
 }
