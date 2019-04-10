@@ -55,8 +55,8 @@ export default function Calibration(props: Props) {
     const video = event.currentTarget;
 
     const videoCoord = new ContainTransform(
-      { x: video.videoWidth, y: video.videoHeight },
-      { x: video.clientWidth, y: video.clientHeight },
+      { width: video.videoWidth, height: video.videoHeight },
+      { width: video.clientWidth, height: video.clientHeight },
     ).inverse({ x: event.clientX, y: event.clientY });
 
     const example = {

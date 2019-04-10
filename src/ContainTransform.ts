@@ -1,3 +1,8 @@
+interface Dimensions {
+  width: number;
+  height: number;
+}
+
 interface Coord {
   x: number;
   y: number;
@@ -10,21 +15,30 @@ interface Coord {
  */
 export default class ContainTransform {
   private readonly scale = Math.min(
-    this.dest.x / this.src.x,
-    this.dest.y / this.src.y,
+    this.dest.width / this.src.width,
+    this.dest.height / this.src.height,
   );
 
-  private deltaX =
-    Math.max(0, this.dest.x - (this.dest.y / this.src.y) * this.src.x) / 2;
-  private deltaY =
-    Math.max(0, this.dest.y - (this.dest.x / this.src.x) * this.src.y) / 2;
+  private xMargin =
+    Math.max(
+      0,
+      this.dest.width - (this.dest.height / this.src.height) * this.src.width,
+    ) / 2;
+  private yMargin =
+    Math.max(
+      0,
+      this.dest.height - (this.dest.width / this.src.width) * this.src.height,
+    ) / 2;
 
-  constructor(private readonly src: Coord, private readonly dest: Coord) {}
+  constructor(
+    private readonly src: Dimensions,
+    private readonly dest: Dimensions,
+  ) {}
 
-  inverse({ x, y }: Coord) {
+  inverse({ x, y }: Coord): Coord {
     return {
-      x: (x - this.deltaX) / this.scale,
-      y: (y - this.deltaY) / this.scale,
+      x: (x - this.xMargin) / this.scale,
+      y: (y - this.yMargin) / this.scale,
     };
   }
 }
