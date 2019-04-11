@@ -26,6 +26,16 @@ declare namespace opencv {
     borderValue: Scalar,
   ): void;
 
+  const CV_RANSAC: number;
+  const CV_LMEDS: number;
+
+  function findHomography(
+    srcPoints: Mat,
+    dstPoints: Mat,
+    method?: number,
+    ransacReprojThreshold?: number,
+  ): Mat;
+
   function imread(id: string): Mat;
   function imshow(id: string | HTMLCanvasElement, dst: Mat): void;
 

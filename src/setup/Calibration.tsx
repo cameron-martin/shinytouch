@@ -22,6 +22,8 @@ interface Props {
   video: React.RefObject<HTMLVideoElement>;
 }
 
+const CALIBRATION_EXAMPLES = 8;
+
 export default function Calibration(props: Props) {
   const [crossPosition, setCrossPosition] = useState<Coord | null>(null);
   const [mode, setMode] = useState<Mode>({ step: 1 });
@@ -53,7 +55,10 @@ export default function Calibration(props: Props) {
 
     calibrationExamples.current.push(example);
 
-    if (mode.step === 1 && calibrationExamples.current.length >= 4) {
+    if (
+      mode.step === 1 &&
+      calibrationExamples.current.length >= CALIBRATION_EXAMPLES
+    ) {
       setMode({
         step: 2,
       });
@@ -67,23 +72,24 @@ export default function Calibration(props: Props) {
       return;
     }
 
+    const examples = calibrationExamples.current;
     const video = props.video.current!;
 
     let srcTri = cv.matFromArray(
-      4,
+      examples.length,
       1,
       cv.CV_32FC2,
-      calibrationExamples.current.flatMap(({ from }) => [from.x, from.y]),
+      examples.flatMap(({ from }) => [from.x, from.y]),
     );
 
     let dstTri = cv.matFromArray(
-      4,
+      examples.length,
       1,
       cv.CV_32FC2,
-      calibrationExamples.current.flatMap(({ to }) => [to.x, to.y]),
+      examples.flatMap(({ to }) => [to.x, to.y]),
     );
 
-    const transform = cv.getPerspectiveTransform(srcTri, dstTri);
+    const transform = cv.findHomography(srcTri, dstTri);
 
     let src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
     let dst = new cv.Mat();
