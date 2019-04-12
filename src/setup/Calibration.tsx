@@ -89,7 +89,7 @@ export default function Calibration(props: Props) {
       examples.flatMap(({ to }) => [to.x, to.y]),
     );
 
-    const transform = cv.findHomography(srcTri, dstTri);
+    const transform = cv.findHomography(srcTri, dstTri, cv.LMEDS);
 
     let src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
     let dst = new cv.Mat();

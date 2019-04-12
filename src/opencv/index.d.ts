@@ -26,8 +26,8 @@ declare namespace opencv {
     borderValue: Scalar,
   ): void;
 
-  const CV_RANSAC: number;
-  const CV_LMEDS: number;
+  const RANSAC: number;
+  const LMEDS: number;
 
   function findHomography(
     srcPoints: Mat,
