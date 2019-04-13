@@ -1,6 +1,8 @@
 version: 2.1
 orbs:
   aws-s3: circleci/aws-s3@1.0.0
+  aws-ecs: circleci/aws-ecs@0.0.3
+  aws-cli: circleci/aws-cli@0.1.13
 jobs:
   build-frontend:
     docker:
@@ -76,7 +78,19 @@ jobs:
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push cmartin/shinytouch-api:$CIRCLE_SHA1
-    
+  deploy-api:
+    docker:
+      - image: 'circleci/python:3.7.1'
+    environment:
+      AWS_REGION: eu-west-2
+    steps:
+      - aws-cli/install
+      - aws-cli/configure
+      - aws-ecs/update-service:
+          family: 'shinytouch-api'
+          cluster-name: 'shinytouch'
+          container-image-name-updates: 'container=shinytouch-api,tag=${CIRCLE_SHA1}'
+
 workflows:
   version: 2
   build-and-deploy:
@@ -86,9 +100,16 @@ workflows:
       - publish-api:
           requires:
             - build-api
+      - deploy-api:
+          requires:
+            - publish-api
+          filters:
+            branches:
+              only: master
       - deploy-frontend:
           requires:
             - build-frontend
+            - deploy-api
           filters:
             branches:
               only: master
