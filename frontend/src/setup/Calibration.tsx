@@ -4,6 +4,7 @@ import ContainTransform from "../ContainTransform";
 import cv from "../opencv";
 import { highConstrast, layer } from "../mixins";
 import React from "react";
+import ApiClient from "../ApiClient";
 
 interface Coord {
   x: number;
@@ -23,6 +24,27 @@ interface Props {
 }
 
 const CALIBRATION_EXAMPLES = 8;
+
+function captureFrame(video: HTMLVideoElement, type?: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    canvas
+      .getContext("2d")!
+      .drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toBlob(blob => {
+      if (blob == null) {
+        reject(new Error("Could not convert canvas to blob"));
+        return;
+      }
+
+      resolve(blob);
+    }, type);
+  });
+}
 
 export default function Calibration(props: Props) {
   const [crossPosition, setCrossPosition] = useState<Coord | null>(null);
@@ -54,6 +76,10 @@ export default function Calibration(props: Props) {
     };
 
     calibrationExamples.current.push(example);
+
+    captureFrame(video, "image/jpeg").then(frame => {
+      new ApiClient().addExample(frame);
+    });
 
     if (
       mode.step === 1 &&

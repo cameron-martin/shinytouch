@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   aws-s3: circleci/aws-s3@1.0.0
 jobs:
-  build:
+  build-frontend:
     docker:
       - image: circleci/node:11.13
 
@@ -15,21 +15,21 @@ jobs:
           keys:
             - v1-dependencies-{{ checksum "yarn.lock" }}
 
-      - run: yarn install --frozen-lockfile
+      - run: cd frontend && yarn install --frozen-lockfile
 
       - save_cache:
           paths:
-            - node_modules
+            - frontend/node_modules
           key: v1-dependencies-{{ checksum "yarn.lock" }}
 
-      - run: yarn test
-      - run: yarn build
+      - run: cd frontend && yarn test
+      - run: cd frontend && yarn build
 
       - persist_to_workspace:
           root: "."
-          paths: "*"
+          paths: "frontend/dist"
 
-  deploy:
+  deploy-frontend:
     docker:
       - image: circleci/python:2.7
     environment:
@@ -41,19 +41,54 @@ jobs:
       - attach_workspace:
           at: .
       - aws-s3/sync:
-          from: dist
+          from: frontend/dist
           to: 's3://shinytouch/'
           overwrite: true
 
+  build-api:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker image
+          command: docker build -t cmartin/shinytouch-api:$CIRCLE_SHA1 ./api
+      - run:
+          name: Archive Docker image
+          command: docker save -o api/image.tar cmartin/shinytouch-api:$CIRCLE_SHA1
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./api/image.tar
+
+  publish-api:
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker
+      - run:
+          name: Load archived Docker image
+          command: docker load -i ./api/image.tar
+      - run:
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push cmartin/shinytouch-api:$CIRCLE_SHA1
     
 workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build
-      - deploy:
+      - build-frontend
+      - build-api
+      - publish-api:
           requires:
-            - build
+            - build-api
+      - deploy-frontend:
+          requires:
+            - build-frontend
           filters:
             branches:
               only: master
