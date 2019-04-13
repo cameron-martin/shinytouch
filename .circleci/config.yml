@@ -81,10 +81,12 @@ jobs:
   deploy-api:
     docker:
       - image: 'circleci/python:3.7.1'
+    environment:
+      AWS_REGION: eu-west-2
     steps:
       - aws-cli/install
       - aws-cli/configure:
-          aws-region: eu-west-2
+          aws-region: AWS_REGION
       - aws-ecs/update-service:
           family: 'shinytouch-api'
           cluster-name: 'shinytouch'
