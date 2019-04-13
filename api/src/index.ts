@@ -5,6 +5,10 @@ const app = express();
 
 app.use(cors());
 
+app.get('/status', (request, response) => {
+    response.sendStatus(200);
+});
+
 app.post('/add-example', (request, response) => {
     // const { calibrationSessionId } = request.params;
 
