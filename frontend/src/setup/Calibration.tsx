@@ -25,7 +25,7 @@ interface Props {
 
 const CALIBRATION_EXAMPLES = 8;
 
-function captureFrame(video: HTMLVideoElement, type?: string): Promise<Blob> {
+function captureFrame(video: HTMLVideoElement, type?: string, quality?: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -42,7 +42,7 @@ function captureFrame(video: HTMLVideoElement, type?: string): Promise<Blob> {
       }
 
       resolve(blob);
-    }, type);
+    }, type, quality);
   });
 }
 
@@ -77,7 +77,7 @@ export default function Calibration(props: Props) {
 
     calibrationExamples.current.push(example);
 
-    captureFrame(video, "image/jpeg").then(frame => {
+    captureFrame(video, "image/jpeg", 0.98).then(frame => {
       new ApiClient().addExample(frame);
     });
 
