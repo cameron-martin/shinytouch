@@ -7,6 +7,8 @@ jobs:
   build-frontend:
     docker:
       - image: circleci/node:11.13
+    environment:
+      API_HOST: 'https://api.shinytouch.app'
 
     working_directory: ~/repo
 
