@@ -1,4 +1,4 @@
-const API_HOST = process.env.API_HOST || 'http://localhost:5678';
+const API_HOST = process.env.API_HOST;
 
 export default class ApiClient {
   /**
