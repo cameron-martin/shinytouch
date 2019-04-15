@@ -3,4 +3,16 @@ services:
   web:
     build: .
     ports:
-     - "5678:8080"
+      - "5678:8080"
+    environment:
+      - S3_ENDPOINT=http://localstack:4572
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4572:4572"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - SERVICES=s3
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - "./.localstack:/tmp/localstack"

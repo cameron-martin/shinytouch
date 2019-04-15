@@ -5,15 +5,16 @@ import cv from "../opencv";
 import { highConstrast, layer } from "../mixins";
 import React from "react";
 import ApiClient from "../ApiClient";
+import uuid from "uuid/v4";
 
 interface Coord {
   x: number;
   y: number;
 }
 
-interface CoordPair {
-  from: Coord;
-  to: Coord;
+interface Example {
+  videoCoord: Coord;
+  screenCoord: Coord;
 }
 
 type Mode = { step: 1 } | { step: 2 };
@@ -25,7 +26,11 @@ interface Props {
 
 const CALIBRATION_EXAMPLES = 8;
 
-function captureFrame(video: HTMLVideoElement, type?: string, quality?: number): Promise<Blob> {
+function captureFrame(
+  video: HTMLVideoElement,
+  type?: string,
+  quality?: number,
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
@@ -35,20 +40,25 @@ function captureFrame(video: HTMLVideoElement, type?: string, quality?: number):
       .getContext("2d")!
       .drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    return canvas.toBlob(blob => {
-      if (blob == null) {
-        reject(new Error("Could not convert canvas to blob"));
-        return;
-      }
+    return canvas.toBlob(
+      blob => {
+        if (blob == null) {
+          reject(new Error("Could not convert canvas to blob"));
+          return;
+        }
 
-      resolve(blob);
-    }, type, quality);
+        resolve(blob);
+      },
+      type,
+      quality,
+    );
   });
 }
 
 export default function Calibration(props: Props) {
   const [crossPosition, setCrossPosition] = useState<Coord | null>(null);
   const [mode, setMode] = useState<Mode>({ step: 1 });
+  const sessionId = useRef(uuid());
 
   const setRandomCrossPosition = () =>
     setCrossPosition({ x: Math.random(), y: Math.random() });
@@ -57,7 +67,7 @@ export default function Calibration(props: Props) {
     setRandomCrossPosition();
   }, []);
 
-  const calibrationExamples = useRef<CoordPair[]>([]);
+  const calibrationExamples = useRef<Example[]>([]);
 
   const handleVideoClick = (event: React.MouseEvent<HTMLElement>) => {
     const video = props.video.current!;
@@ -67,9 +77,9 @@ export default function Calibration(props: Props) {
       { width: video.clientWidth, height: video.clientHeight },
     ).inverse({ x: event.clientX, y: event.clientY });
 
-    const example = {
-      from: videoCoord,
-      to: {
+    const example: Example = {
+      videoCoord: videoCoord,
+      screenCoord: {
         x: crossPosition!.x * window.innerWidth,
         y: crossPosition!.y * window.innerHeight,
       },
@@ -78,7 +88,7 @@ export default function Calibration(props: Props) {
     calibrationExamples.current.push(example);
 
     captureFrame(video, "image/jpeg", 0.98).then(frame => {
-      new ApiClient().addExample(frame);
+      new ApiClient().addExample(sessionId.current, frame);
     });
 
     if (
@@ -105,14 +115,14 @@ export default function Calibration(props: Props) {
       examples.length,
       1,
       cv.CV_32FC2,
-      examples.flatMap(({ from }) => [from.x, from.y]),
+      examples.flatMap(({ videoCoord: coord }) => [coord.x, coord.y]),
     );
 
     let dstTri = cv.matFromArray(
       examples.length,
       1,
       cv.CV_32FC2,
-      examples.flatMap(({ to }) => [to.x, to.y]),
+      examples.flatMap(({ screenCoord: coord }) => [coord.x, coord.y]),
     );
 
     const transform = cv.findHomography(srcTri, dstTri, cv.LMEDS);

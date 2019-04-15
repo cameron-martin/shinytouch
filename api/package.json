@@ -9,7 +9,10 @@
     "typescript": "^3.4.3"
   },
   "dependencies": {
+    "@types/uuid": "^3.4.4",
+    "aws-sdk": "^2.437.0",
     "cors": "^2.8.5",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "uuid": "^3.3.2"
   }
 }
