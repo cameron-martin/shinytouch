@@ -6,6 +6,7 @@ services:
       - "5678:8080"
     environment:
       - S3_ENDPOINT=http://localstack:4572
+      - NODE_ENV=development
   localstack:
     image: localstack/localstack
     ports:
