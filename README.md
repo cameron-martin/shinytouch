@@ -22,3 +22,9 @@ yarn start
 cd api
 docker-compose up
 ```
+
+On first run, you must create the necessary s3 buckets. In future this will be handled by cloudformation (#7).
+
+```sh
+./ls3.sh mb s3://calibration-examples
+```
