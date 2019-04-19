@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import aws from "aws-sdk";
 import uuid from "uuid/v4";
+import Busboy from "busboy";
+import util from "util";
 
 const app = express();
 
@@ -26,22 +28,51 @@ const credentials =
 
 const s3 = new aws.S3(credentials);
 
-function getContentLength(request: express.Request) {
-  const header = request.headers["content-length"];
+const s3Upload = util.promisify(s3.upload.bind(s3));
 
-  if (!header) return null;
+function findFrame(
+  busboy: busboy.Busboy,
+  handle: (stream: NodeJS.ReadableStream) => Promise<void>
+): Promise<void> {
+  let found = false;
 
-  const length = Number.parseInt(header);
+  return new Promise((resolve, reject) => {
+    busboy.on("file", (fieldname, file) => {
+      if (fieldname === "frame") {
+        found = true;
 
-  if (Number.isNaN(length)) return null;
+        resolve(handle(file));
+      }
+    });
 
-  return length;
+    busboy.on("end", () => {
+      if (!found) {
+        reject(new Error("Cannot find frame field"));
+      }
+    });
+  });
 }
 
-// REVIEW: Copying this to memory wastes a lot of memory
-// We should be able to stream it from the request, but doing so
-// gives me strange errors.
-// Alternatively, the client could send it straight to s3, I think using cognito user pools.
+function findMetadata(busboy: busboy.Busboy): Promise<string> {
+  let found = false;
+
+  return new Promise((resolve, reject) => {
+    busboy.on("field", (fieldname, value) => {
+      if (fieldname === "metadata") {
+        found = true;
+
+        resolve(value);
+      }
+    });
+
+    busboy.on("end", () => {
+      if (!found) {
+        reject(new Error("Cannot find metadata field"));
+      }
+    });
+  });
+}
+
 app.post("/add-example", (request, response) => {
   const { calibrationSessionId } = request.query;
 
@@ -50,33 +81,41 @@ app.post("/add-example", (request, response) => {
     return;
   }
 
-  const length = getContentLength(request);
-
-  if (!length) {
-    response.status(400).send("Expecting content-length header");
-    return;
-  }
-
   const exampleId = uuid();
 
-  s3.upload(
-    {
-      Body: request,
-      Bucket: "calibration-examples",
-      Key: `${calibrationSessionId}/${exampleId}.jpg`,
-      ContentLength: length
-    },
-    (err, data) => {
-      if (err) {
-        response
-          .status(500)
-          .send("Error saving calibration example: " + err.message);
-        return;
-      }
+  const busboy = new Busboy({ headers: request.headers });
 
+  const handleMetadata = async () => {
+    const metadata = await findMetadata(busboy);
+
+    return s3Upload({
+      Body: metadata,
+      Bucket: "calibration-examples",
+      Key: `${calibrationSessionId}/${exampleId}.json`,
+      ContentType: "application/json"
+    });
+  };
+
+  const handleFrame = async () => {
+    return findFrame(busboy, async stream => {
+      await s3Upload({
+        Body: stream,
+        Bucket: "calibration-examples",
+        Key: `${calibrationSessionId}/${exampleId}.jpeg`,
+        ContentType: "image/jpeg"
+      });
+    });
+  };
+
+  Promise.all([handleMetadata(), handleFrame()])
+    .then(() => {
       response.sendStatus(201);
-    }
-  );
+    })
+    .catch(err => {
+      response.status(500).send(err.message);
+    });
+
+  request.pipe(busboy);
 });
 
 app.listen(8080);

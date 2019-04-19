@@ -13,8 +13,8 @@ interface Coord {
 }
 
 interface Example {
-  videoCoord: Coord;
-  screenCoord: Coord;
+  videoPosition: Coord;
+  screenPosition: Coord;
 }
 
 type Mode = { step: 1 } | { step: 2 };
@@ -78,8 +78,8 @@ export default function Calibration(props: Props) {
     ).inverse({ x: event.clientX, y: event.clientY });
 
     const example: Example = {
-      videoCoord: videoCoord,
-      screenCoord: {
+      videoPosition: videoCoord,
+      screenPosition: {
         x: crossPosition!.x * window.innerWidth,
         y: crossPosition!.y * window.innerHeight,
       },
@@ -88,7 +88,10 @@ export default function Calibration(props: Props) {
     calibrationExamples.current.push(example);
 
     captureFrame(video, "image/jpeg", 0.98).then(frame => {
-      new ApiClient().addExample(sessionId.current, frame);
+      new ApiClient().addExample(sessionId.current, frame, {
+        ...example,
+        screenSize: { width: window.innerWidth, height: window.innerHeight },
+      });
     });
 
     if (
@@ -115,14 +118,14 @@ export default function Calibration(props: Props) {
       examples.length,
       1,
       cv.CV_32FC2,
-      examples.flatMap(({ videoCoord: coord }) => [coord.x, coord.y]),
+      examples.flatMap(({ videoPosition: coord }) => [coord.x, coord.y]),
     );
 
     let dstTri = cv.matFromArray(
       examples.length,
       1,
       cv.CV_32FC2,
-      examples.flatMap(({ screenCoord: coord }) => [coord.x, coord.y]),
+      examples.flatMap(({ screenPosition: coord }) => [coord.x, coord.y]),
     );
 
     const transform = cv.findHomography(srcTri, dstTri, cv.LMEDS);
@@ -131,6 +134,7 @@ export default function Calibration(props: Props) {
     let dst = new cv.Mat();
     let cap = new cv.VideoCapture(video);
     let dsize = new cv.Size(window.innerWidth, window.innerHeight);
+
     const render = () => {
       cap.read(src);
 
